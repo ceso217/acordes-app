@@ -1,0 +1,39 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id Int @id @default(autoincrement())
+  username String
+  email String
+  favoritos Cancion[]
+}
+
+model Autor {
+  id Int @id @default(autoincrement())
+  nombre String
+  canciones Cancion[]
+}
+
+model Cancion {
+  id Int @id @default(autoincrement())
+  nombre String
+  letra String
+  referencia String
+  autor Autor @relation(fields: [autorId], references: [id])
+  autorId Int
+  favoritos Usuario[]
+}
+
+model Lectura {
+  id Int @id @default(autoincrement())
+  titulo String
+  texto String
+}
