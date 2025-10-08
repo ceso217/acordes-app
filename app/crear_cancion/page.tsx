@@ -13,8 +13,13 @@ type Cancion = {
   referencia: string;
 };
 
+type Autor = { id: number; nombre: string };
+type Option = { value: number; label: string };
+
 export default function CrearCancionesPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [options, setOptions] = useState<Option[]>([]);
+  const [selected, setSelected] = useState<Option | null>(null);
 
   const {
     register,
@@ -46,7 +51,23 @@ export default function CrearCancionesPage() {
     }
   };
 
-  useEffect(() => {});
+  useEffect(() => {
+    let mounted = true;
+    async function traerAutores() {
+      try{
+        const res = await axios.get<Autor[]>("/api/autores");
+        if(!mounted) return;
+        const autores = (res.data ?? []).map((a)=>({value: a.id, label: a.nombre}));
+        setOptions(autores);
+      }catch(err){
+        console.error("Error recurperando autores:", err)
+      }
+    }
+    traerAutores();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="h-screen flex items-center bg-[#D7F5DC] ">
