@@ -1,7 +1,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -18,7 +17,7 @@ model Usuario {
 
 model Autor {
   id Int @id @default(autoincrement())
-  nombre String
+  nombre String @unique
   canciones Cancion[]
 }
 
