@@ -1,14 +1,17 @@
 "use client";
 
 import { use } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller, Control, Path, FieldValues } from "react-hook-form";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { NuevoAutorModal } from "@/components/nuevo-autor-modal";
+import React from 'react';
+import Select from 'react-select'
+import type {GroupBase} from 'react-select';
 
 type Cancion = {
   nombre: string;
-  autor: string;
+  autorId: number;
   letra: string;
   referencia: string;
 };
@@ -19,19 +22,20 @@ type Option = { value: number; label: string };
 export default function CrearCancionesPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
-  const [selected, setSelected] = useState<Option | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<Cancion>({
     mode: "onSubmit",
   });
 
   const onSubmit = async (data: Cancion) => {
+    console.log("Datos del formulario:", data);
     try {
       const res = await axios.post("/api/canciones", data);
       reset();
@@ -60,7 +64,7 @@ export default function CrearCancionesPage() {
         const autores = (res.data ?? []).map((a)=>({value: a.id, label: a.nombre}));
         setOptions(autores);
       }catch(err){
-        console.error("Error recurperando autores:", err)
+        console.error("Error recuperando autores:", err)
       }
     }
     traerAutores();
@@ -73,10 +77,10 @@ export default function CrearCancionesPage() {
     <div className="h-screen flex items-center bg-[#D7F5DC] ">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col items-center mx-10 p-9 pb-0 rounded-3xl w-full h-auto text-lg"
+        className="flex flex-col items-center mx-10 p-9 pb-0 rounded-3xl w-full h-auto"
       >
-        <div className="w-full">
-          <label className="flex">
+        <div className="w-full text-xl">
+          <label className="flex items-center">
             Nombre:
             <div className="flex-1 px-4">
               <input
@@ -84,7 +88,7 @@ export default function CrearCancionesPage() {
                   required: "El nombre de la canción es obligatorio",
                 })}
                 placeholder="Nombre de la canción"
-                className="bg-white w-full rounded-xl px-3"
+                className="bg-white w-full h-10 rounded-3xl border border-gray-300 px-3"
                 type="text"
               />
               {errors.nombre && (
@@ -95,40 +99,62 @@ export default function CrearCancionesPage() {
             </div>
           </label>
         </div>
-        <div className="my-3 w-full">
-          <label className="flex">
+        <div className="my-3 w-full text-xl">
+          <label className="flex items-center">
             Autor:
             <div className="w-full">
               <div className="flex">
-                <input
-                  {...register("autor", {
-                    required: "El autor es obligatorio",
-                  })}
-                  placeholder="Autor"
-                  className="bg-white flex-1 mx-4 rounded-xl px-3"
-                  type="text"
+              <Controller 
+              name="autorId" 
+              control={control} 
+              rules={{ required: "El autor es obligatorio" }}
+              render={({ field }) => (
+                <Select<Option, false, GroupBase<Option>>
+                {...field}
+                options={options} 
+                value={options.find(o => o.value === field.value) ?? null}
+                onChange={(opt) => field.onChange(opt ? opt.value : null)}
+                placeholder = "Selecciona un autor" 
+                className="w-full mx-3 flex-1"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                  borderRadius: "1.75rem"
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected
+                      ? '#3b82f6'
+                      : state.isFocused
+                      ? '#e5e7eb'
+                      : 'white',
+                    color: state.isSelected ? 'white' : 'black',
+                  })
+                }}  
+              />
+              )}
                 />
                 <button
                   onClick={() => setIsOpen(true)}
-                  className="bg-white rounded-4xl mr-4 px-3 hover:scale-110 hover:bg-green-400 hover:shadow-2xl transition-all duration-300"
+                  className="bg-white rounded-4xl mr-4 px-3 border border-gray-300 hover:scale-110 hover:bg-green-400 hover:shadow-2xl transition-all duration-300"
                   type="button"
                 >
-                  +
+                  Agregar autor
                 </button>
                 <NuevoAutorModal
                   isOpen={isOpen}
                   onClose={() => setIsOpen(false)}
                 />
               </div>
-              {errors.autor && (
-                <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-6 -translate-y-2 hover:text-lg transition-all">
-                  {errors.autor.message}
-                </p>
-              )}
+              {errors.autorId && (
+        <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-5 -translate-y-3 hover:text-lg transition-all">
+          {errors.autorId.message}
+        </p>
+      )}
             </div>
           </label>
         </div>
-        <div className="my-2 w-full">
+        <div className="my-2 w-full text-xl">
           <label className="flex">
             Letra:
             <div className="w-full px-4">
@@ -137,7 +163,7 @@ export default function CrearCancionesPage() {
                   required: "La letra de la canción es obligatoria",
                 })}
                 placeholder="Letra y acordes"
-                className="bg-white w-full rounded-xl resize-none px-3"
+                className="bg-white w-full rounded-3xl border border-gray-300 resize-none px-3 py-2"
                 rows={8}
               />
               {errors.letra && (
@@ -148,13 +174,13 @@ export default function CrearCancionesPage() {
             </div>
           </label>
         </div>
-        <div className="mt-2 w-full">
-          <label className="flex">
+        <div className="mt-2 w-full text-xl">
+          <label className="flex items-center">
             Referencia:
             <input
               {...register("referencia")}
               placeholder="Referencia (opcional)"
-              className="bg-white mx-4 w-full rounded-xl px-3"
+              className="bg-white mx-4 w-full h-10 rounded-3xl border border-gray-300 px-3"
               type="text"
             />
           </label>

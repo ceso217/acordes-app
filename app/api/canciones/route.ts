@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { nombre, autor, letra, referencia } = await req.json();
+  const { nombre, autorId, letra, referencia } = await req.json();
   try {
     const cancion = await prisma.cancion.create({
       data: {
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         referencia,
         autor: {
           connect: {
-            nombre: autor,
+            id: autorId,
           },
         },
       },
