@@ -1,13 +1,14 @@
 "use client";
 
 import { use } from "react";
-import { useForm, Controller, Control, Path, FieldValues } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { NuevoAutorModal } from "@/components/nuevo-autor-modal";
-import React from 'react';
-import Select from 'react-select'
-import type {GroupBase} from 'react-select';
+import { limpiarTexto, NuevoAutorModal } from "@/components/nuevo-autor-modal";
+import React from "react";
+import Select from "react-select";
+import type { GroupBase } from "react-select";
+import { Toaster, toast } from "react-hot-toast";
 
 type Cancion = {
   nombre: string;
@@ -34,10 +35,42 @@ export default function CrearCancionesPage() {
     mode: "onSubmit",
   });
 
+  async function traerCancionesAutor(autorId: number) {
+    try {
+      const res = await axios.get<Cancion[]>("/api/canciones");
+      const cancionesFiltrados = (res.data ?? []).filter(
+        (c) => c.autorId === autorId
+      );
+      return cancionesFiltrados;
+    } catch (error: any) {
+      if (error.response) {
+        setError("root", {
+          type: "server",
+          message: error.response.data.message || "Error del servidor",
+        });
+      } else {
+        setError("root", {
+          type: "server",
+          message: "Error de red",
+        });
+      }
+    }
+  }
+
   const onSubmit = async (data: Cancion) => {
     console.log("Datos del formulario:", data);
+    const canciones = (await traerCancionesAutor(data.autorId)) ?? [];
+    if (
+      canciones.some(
+        (c) => limpiarTexto(c.nombre) === limpiarTexto(data.nombre)
+      )
+    ) {
+      toast.error("Esta canción ya existe.");
+      return;
+    }
     try {
       const res = await axios.post("/api/canciones", data);
+      toast.success("Canción creada exitosamente!");
       reset();
       console.log("Canción guardada:", res.data);
     } catch (error: any) {
@@ -52,19 +85,23 @@ export default function CrearCancionesPage() {
           message: "Error de red",
         });
       }
+      toast.error("Ocurrió un error");
     }
   };
 
   useEffect(() => {
     let mounted = true;
     async function traerAutores() {
-      try{
+      try {
         const res = await axios.get<Autor[]>("/api/autores");
-        if(!mounted) return;
-        const autores = (res.data ?? []).map((a)=>({value: a.id, label: a.nombre}));
+        if (!mounted) return;
+        const autores = (res.data ?? []).map((a) => ({
+          value: a.id,
+          label: a.nombre,
+        }));
         setOptions(autores);
-      }catch(err){
-        console.error("Error recuperando autores:", err)
+      } catch (err) {
+        console.error("Error recuperando autores:", err);
       }
     }
     traerAutores();
@@ -104,35 +141,37 @@ export default function CrearCancionesPage() {
             Autor:
             <div className="w-full">
               <div className="flex">
-              <Controller 
-              name="autorId" 
-              control={control} 
-              rules={{ required: "El autor es obligatorio" }}
-              render={({ field }) => (
-                <Select<Option, false, GroupBase<Option>>
-                {...field}
-                options={options} 
-                value={options.find(o => o.value === field.value) ?? null}
-                onChange={(opt) => field.onChange(opt ? opt.value : null)}
-                placeholder = "Selecciona un autor" 
-                className="w-full mx-3 flex-1"
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                  borderRadius: "1.75rem"
-                  }),
-                  option: (base, state) => ({
-                    ...base,
-                    backgroundColor: state.isSelected
-                      ? '#3b82f6'
-                      : state.isFocused
-                      ? '#e5e7eb'
-                      : 'white',
-                    color: state.isSelected ? 'white' : 'black',
-                  })
-                }}  
-              />
-              )}
+                <Controller
+                  name="autorId"
+                  control={control}
+                  rules={{ required: "El autor es obligatorio" }}
+                  render={({ field }) => (
+                    <Select<Option, false, GroupBase<Option>>
+                      {...field}
+                      options={options}
+                      value={
+                        options.find((o) => o.value === field.value) ?? null
+                      }
+                      onChange={(opt) => field.onChange(opt ? opt.value : null)}
+                      placeholder="Selecciona un autor"
+                      className="w-full mx-3 flex-1"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderRadius: "1.75rem",
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isSelected
+                            ? "#3b82f6"
+                            : state.isFocused
+                            ? "#e5e7eb"
+                            : "white",
+                          color: state.isSelected ? "white" : "black",
+                        }),
+                      }}
+                    />
+                  )}
                 />
                 <button
                   onClick={() => setIsOpen(true)}
@@ -147,10 +186,10 @@ export default function CrearCancionesPage() {
                 />
               </div>
               {errors.autorId && (
-        <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-5 -translate-y-3 hover:text-lg transition-all">
-          {errors.autorId.message}
-        </p>
-      )}
+                <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-5 -translate-y-3 hover:text-lg transition-all">
+                  {errors.autorId.message}
+                </p>
+              )}
             </div>
           </label>
         </div>

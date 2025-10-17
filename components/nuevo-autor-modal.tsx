@@ -14,7 +14,7 @@ type Autor = {
   nombre: string;
 };
 
-function limpiarTexto(texto: string): string {
+export function limpiarTexto(texto: string): string {
   return texto
     .normalize("NFD") // separa letras y acentos
     .replace(/\p{Diacritic}/gu, "") // elimina los acentos
