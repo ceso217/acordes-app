@@ -8,10 +8,11 @@ import { limpiarTexto, NuevoAutorModal } from "@/components/nuevo-autor-modal";
 import React from "react";
 import Select from "react-select";
 import type { GroupBase } from "react-select";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import { Option } from "react-day-picker";
 
 type Cancion = {
-  nombre: string;
+  titulo: string;
   autorId: number;
   letra: string;
   referencia: string;
@@ -34,6 +35,14 @@ export default function CrearCancionesPage() {
   } = useForm<Cancion>({
     mode: "onSubmit",
   });
+
+  const handleAutorCreado = (autor: Autor) => {
+    setOptions((prev) =>
+      [...prev, { value: autor.id, label: autor.nombre }].sort((a, b) =>
+        a.label.localeCompare(b.label)
+      )
+    );
+  };
 
   async function traerCancionesAutor(autorId: number) {
     try {
@@ -62,10 +71,10 @@ export default function CrearCancionesPage() {
     const canciones = (await traerCancionesAutor(data.autorId)) ?? [];
     if (
       canciones.some(
-        (c) => limpiarTexto(c.nombre) === limpiarTexto(data.nombre)
+        (c) => limpiarTexto(c.titulo) === limpiarTexto(data.titulo)
       )
     ) {
-      toast.error("Esta canción ya existe.");
+      toast.error("Ya existe una canción de este autor/a con ese nombre.");
       return;
     }
     try {
@@ -99,7 +108,7 @@ export default function CrearCancionesPage() {
           value: a.id,
           label: a.nombre,
         }));
-        setOptions(autores);
+        setOptions(autores.sort((a, b) => a.label.localeCompare(b.label)));
       } catch (err) {
         console.error("Error recuperando autores:", err);
       }
@@ -118,19 +127,19 @@ export default function CrearCancionesPage() {
       >
         <div className="w-full text-xl">
           <label className="flex items-center">
-            Nombre:
+            Título:
             <div className="flex-1 px-4">
               <input
-                {...register("nombre", {
+                {...register("titulo", {
                   required: "El nombre de la canción es obligatorio",
                 })}
                 placeholder="Nombre de la canción"
                 className="bg-white w-full h-10 rounded-3xl border border-gray-300 px-3"
                 type="text"
               />
-              {errors.nombre && (
-                <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-2 -translate-y-2 hover:text-lg transition-all">
-                  {errors.nombre.message}
+              {errors.titulo && (
+                <p className="inline-block bg-red-500 rounded-4xl px-3 text-lg text-black translate-x-2 -translate-y-2 hover:text-xl transition-all">
+                  {errors.titulo.message}
                 </p>
               )}
             </div>
@@ -178,15 +187,16 @@ export default function CrearCancionesPage() {
                   className="bg-white rounded-4xl mr-4 px-3 border border-gray-300 hover:scale-110 hover:bg-green-400 hover:shadow-2xl transition-all duration-300"
                   type="button"
                 >
-                  Agregar autor
+                  Agregar un nuevo autor
                 </button>
                 <NuevoAutorModal
                   isOpen={isOpen}
                   onClose={() => setIsOpen(false)}
+                  onCreated={handleAutorCreado}
                 />
               </div>
               {errors.autorId && (
-                <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-5 -translate-y-3 hover:text-lg transition-all">
+                <p className="inline-block bg-red-500 rounded-4xl px-3 text-lg text-black translate-x-5 -translate-y-3 hover:text-xl transition-all">
                   {errors.autorId.message}
                 </p>
               )}
@@ -206,7 +216,7 @@ export default function CrearCancionesPage() {
                 rows={8}
               />
               {errors.letra && (
-                <p className="inline-block bg-red-500 rounded-4xl px-3 text-sm text-black translate-x-1 -translate-y-5 hover:text-lg transition-all">
+                <p className="inline-block bg-red-500 rounded-4xl px-3 text-lg text-black translate-x-1 -translate-y-5 hover:text-xl transition-all">
                   {errors.letra.message}
                 </p>
               )}
@@ -227,7 +237,7 @@ export default function CrearCancionesPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="p-2 bg-sky-500 rounded-4xl m-6 hover:scale-105 hover:bg-sky-400 hover:shadow-2xl transition-all duration-300"
+          className="p-2 bg-sky-500 rounded-4xl m-6 hover:scale-105 hover:bg-sky-400 hover:shadow-2xl transition-all duration-300 text-xl"
         >
           Agregar canción
         </button>

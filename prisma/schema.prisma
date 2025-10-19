@@ -18,17 +18,21 @@ model Usuario {
 model Autor {
   id Int @id @default(autoincrement())
   nombre String @unique
+  slug String @unique
   canciones Cancion[]
 }
 
 model Cancion {
   id Int @id @default(autoincrement())
-  nombre String
+  titulo String
+  slug String 
   letra String
   referencia String
   autor Autor @relation(fields: [autorId], references: [id])
   autorId Int
   favoritos Usuario[]
+
+  @@unique([autorId, slug])
 }
 
 model Lectura {
